@@ -1,0 +1,4 @@
+Some notes to remember how to convert 80-wide terminal screenshots to animated gifs.
+
+# convert in.png -crop 280x40+25+50 +repage out.png
+# convert -delay 100 -loop 0 i0.png i1.png out.gif

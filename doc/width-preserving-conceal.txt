@@ -1,0 +1,297 @@
+*width-preserving-conceal.txt*          Width-preserving Conceal
+*width-preserving-conceal*
+
+Version: 0.1.0
+Author: mickk-on-cpp <https://github.com/mickk-on-cpp/>
+License: MIT license (see the accompanying `LICENSE` file)
+
+CONTENTS                                *width-preserving-conceal-contents*
+
+  1. Description                        |width-preserving-conceal-description|
+  2. Limitations                        |width-preserving-conceal-limitations|
+  3. Options                            |width-preserving-conceal-options|
+  4. Preset Rules                       |width-preserving-conceal-presets|
+  5. Custom Rules                       |width-preserving-conceal-custom|
+
+==============================================================================
+DESCRIPTION                             *width-preserving-conceal-description*
+
+This plugin makes it possible to define custom width-preserving substitutions
+using the |conceal| feature of Vim. 'Width-preserving' means that a line takes
+the same number of columns on the screen regardless of the |'conceallevel'|.
+Some preset rules are also provided. For instance, the following Haskell code:
+>
+    compute :: (Fractional a) => a -> a -> a
+    compute a b = (a * b) / (a + b)
+<
+roughly looks like this, given an appropriate |'conceallevel'|:
+>
+    compute :: (Fractional a) ⇒  a →  a →  a
+    compute a b = (a × b) ÷ (a + b)
+<
+Notice how the `a` type variables line up to the same column in either case.
+This is particularly valuable when used in tandem with |'concealcursor'|, so
+as to avoid things shifting left and right as the cursor navigates source
+code.
+
+While this plugin does set some |highlight| rules by default, it does not set
+rules for the |hl-Conceal| highlight group in order to play nice with other
+concealing plugins. If you do not like the look of concealed items that comes
+with your configuration and/or |colorscheme|, you can set it yourself in your
+configuration files. For instance, you might try:
+>
+    highlight! link Conceal NonText
+<
+Also see the highlighting options.      |width-preserving-conceal-highlight|
+
+==============================================================================
+LIMITATIONS                             *width-preserving-conceal-limitations*
+
+When concealing is on, all substitutions are highlighted as |hl-Conceal| and
+will have a common appearance. This is inherent to the conceal functionality.
+
+Conceal rules can produce a large amount of actual syntax and highlighting
+rules. While some care has been taken that the rules are sensible enough, it
+may be instructive to look at the output of |:syntax| if problems start to
+crop up.
+
+==============================================================================
+OPTIONS                                 *width-preserving-conceal-options*
+
+                                        *width-preserving-conceal-highlight*
+
+By default conceal rules generate |highlight| rules alongside syntax rules.
+This can be disabled by setting `g:width_preserving_conceal_no_links` to a
+true value in your configuration files. This option can be toggled at any
+time, but only ever affects new rules being made.
+
+Note that the highlighting rules only ever have an effect when concealing is
+off (e.g. if |'conceallevel'| is set to 0, or on a line with the cursor when
+|'concealcursor'| is set to ""). When concealing is on, all substitutions are
+highlighted as |hl-Conceal| and will have a common appearance. This is
+inherent to the conceal functionality.
+
+==============================================================================
+PRESET RULES                            *width-preserving-conceal-presets*
+
+So far there are only preset rules provided for Haskell, and they're fairly
+conservative. They are designed to work with the stock language files that
+ship with Vim. They can be disabled by setting the following in your
+configuration files:
+>
+    let g:width_preserving_conceal_no_haskell_presets = 1
+>
+==============================================================================
+CUSTOM RULES                            *width-preserving-conceal-custom*
+
+Whenever a parameter or setting is required to be a pattern, it means it must
+be a string that does not contain the `'pattern_delimiter'` (see below),
+|/\zs|, or |/\ze| pattern items.
+
+------------------------------------------------------------------------------
+                                        *width-preserving-conceal-settings*
+
+Defining new conceal rules is parametrised over a bunch of settings. For
+ease of use |width_preserving_conceal#new()| is provided to create a closure
+over some settings, filling in with defaults where needed. The meanings of
+these settings and their default values (if any) are as follows:
+
+  `'operator_symbol'`
+    A pattern that recognises an operator symbol for whichever language
+    conceal rules will be defined. For a language without operators, it is
+    possible to leave this setting as a blank string ("") but care must then
+    be taken that no operator conceal rule is defined.
+
+  `'pattern_delimiter': '{'`
+    The character to delimit patterns with in syntax rules.
+                                                    |syn-pattern|
+
+  `'containedin': 'TOP'`
+    A non-empty string of comma-separated syntax group names. This dictates
+    where the conceal syntax rules will appear.     |syn-containedin|.
+
+    Note for instance that something like `'TOP,cComment,cppComment'` might be
+    a more appropriate value for C. This depends on whether substitutions
+    inside comments are appropriate or not.
+
+  `'top_syntax_options': 'display containedin={containedin}'`
+    A string of space-separated syntax options. These will be applied to the
+    overall conceal rule.                           |:syn-arguments|.
+
+    In the default, {containedin} stands for the effective value of the
+    `'containedin'` setting when a closure is being created.
+
+  `'part_syntax_options': 'display transparent contains=NONE'`
+    Like `'top_syntax_options'`, but for the parts that make up a rule, if any.
+
+  `'identifier_left_boundary': '\<'`
+  `'identifier_right_boundary': '\>'`
+    |/zero-width| patterns to delimit non-operator conceal rules.
+
+  `'operator_left_boundary': '{operator_symbol}\@<!'`
+  `'operator_right_boundary': '{operator_symbol}\@!'`
+    |/zero-width| patterns to delimit operator conceal rules.
+
+    In the default, {operator_symbol} stands for the effective value of the
+    `'operator_symbol'` setting when a closure is being created.
+
+  `'identifier_highlight': 'Identifier'`
+    A highlight group to link non-operator conceal rules to.
+
+  `'operator_highlight': 'Operator'`
+    A highlight group to link operator conceal rules to.
+
+  `'is_operator': 0'`
+    Whether the rule being defined applies to an operator in the syntax of
+    the language. This setting is typically set on a by-case basis rather than
+    language wide, but is documented here to outline the differences in
+    behaviour between operator conceal rules and non-operator conceal rules.
+
+    If set, `'operator_left_boundary'` and `'operator_right_boundary'` will be
+    used to delimit the overall conceal rule. Otherwise,
+    `'identifier_left_boundary'` and `'identifier_right_boundary'` will be
+    used.
+
+    Additionally a conceal rule will link to the `'operator_highlight'`
+    highlight group for an operator, and to `'identifier_highlight'`
+    otherwise. This does not take place at all if
+    `g:width_preserving_conceal_no_links` is set. See the options for more
+    information on highlighting          |width-preserving-conceal-highlight|
+
+------------------------------------------------------------------------------
+                                        *width_preserving_conceal#new()*
+width_preserving_conceal#new({operator_symbol} [, {settings}])
+
+                Store conceal settings into a closure (i.e. a |Dictionary|
+                containing |Dictionary-function|s). This makes it easy to
+                specify settings once for as many conceal rules as desired.
+
+                Since {operator_symbol} is a setting without a default it must
+                be passed first. {settings} is then an optional dictionary
+                that may contain additional settings in order to override
+                defaults. All other entries in {settings} will also be added
+                to the result. If {settings} specifies an `'operator_symbol'`
+                setting, it takes precedence over the {operator_symbol}
+                argument.
+
+                See |width-preserving-conceal-settings| for the meanings and
+                default values of the individual settings.
+
+                The typical way to proceed is to close over language-wide
+                settings by calling `#new()`, then using its result to define
+                conceal rules:
+>
+                    let s:operator_symbol = …something language appropriate…
+                    let s:settings = { …fill some entries as needed… }
+                    let s:conceal = width_preserving_conceal#new(
+                            \ s:operator_symbol,
+                            \ s:settings)
+
+                    call s:conceal.identifier('not', '¬')
+                    call s:conceal.operator('Equal', '==', '≡')
+<
+                It is possible to change any setting stored in the closure at
+                any time:
+>
+                    let s:conceal.is_operator = 1
+<
+                The new value will be used in all future calls, such that in
+                this example all newly defined rules will be operator conceal
+                rules.
+
+                The available dictionary functions are documented below.
+
+In the following {closure} will always refer to the result of a call to
+|width_preserving_conceal#new()| used as an argument to a function or
+dictionary function.
+
+Additionally, all the rule-defining functions always accept an optional
+{extra_settings} argument. It can be used to override the {closure} settings
+for this call only or to provide additional, function-specific settings.
+
+------------------------------------------------------------------------------
+                                        *width_preserving_conceal#parts()*
+width_preserving_conceal#parts({closure}, {name}, {parts}, {subst} [, {extra_settings}])
+{closure}.parts({name}, {parts}, {subst} [, extra_settings})
+
+                Define a conceal rule built from parts.
+
+                {name} will be used to construct syntax rule names. It will be
+                prefixed and suffixed to lessen the risk of a namespace
+                collision.
+
+                {parts} is a non-empty list of patterns. For best results each
+                pattern should match one column worth of screen.
+
+                {subst} is a pair (i.e. list of length at least 2) of an index
+                and a substitution string. The index must be valid for
+                {parts}. As with the {parts} the substitute should likely be
+                one column wide.
+
+                `'left_boundary'` and/or `'right_boundary'` may be specified
+                in {extra_settings} in order to delimit the overall conceal
+                pattern. Otherwise, `'is_operator'` and the regular operator
+                or identifier boundary settings will be honoured as
+                appropriate.            |width-preserving-conceal-settings|
+
+                Example:
+>
+                    call s:conceal.parts('Arrow', ['-', '>'], [0, '→'],
+                            \ {'is_operator': 1})
+<
+                This defines a conceal rule to substitute `'->'` with `'→ '`
+                (where both alternatives are two columns wide). By setting
+                `'is_operator'` we've presumably ensured that e.g. `'-->'`
+                will not be mangled to `'-→ '`, provided that we've set
+                appropriate operator boundaries in our closure.
+
+------------------------------------------------------------------------------
+                                        *width_preserving_conceal#identifier()*
+width_preserving_conceal#identifier({closure}, {name}, {subst} [, {extra_settings}])
+{closure}.identifier({name}, {subst} [, {extra_settings}])
+
+                Define a conceal rule for an identifier. This is a
+                convenience function over |width_preserving_conceal#parts()|.
+
+                {name} is the identifier to substitute with {subst} in the
+                middle. It will also be used to name the syntax rules, so
+                should be able to form a valid syntax group name on its own.
+
+                `'idx'` may be specified in {extra_settings} if {subst} should
+                appear elsewhere than the middle.
+
+                Example:
+>
+                    call s:conceal.identifier('not', '¬')
+<
+                This defines a conceal rule to substitute `'not'` with `' ¬ '`
+                (where both alternatives are three columns wide). As long as
+                identifier boundaries are sensible, this will not mangle e.g.
+                `'cannot'`.
+
+------------------------------------------------------------------------------
+                                        *width_preserving_conceal#operator()*
+width_preserving_conceal#operator({closure}, {name}, {op}, {subst} [, {extra_settings}])
+{closure}.operator({name}, {op}, {subst} [, {extra_settings}])
+
+                Define a conceal rule for an operator. This is a convenience
+                function over |width_preserving_conceal#parts()|.
+
+                {name} will be used to name the syntax rules, as with
+                `#parts()`. {op} is the operator to substitute with {subst} in
+                the middle.
+
+                Note that if the backslash (`'\'`) is matched by
+                `'operator_symbol'`, then `#operator()` will not be able to
+                handle operators that have a special meaning in a |pattern|.
+                `#parts()` should be used instead.
+
+                `'idx'` may be specified in {extra_settings} if {subst} should
+                appear elsewhere than the middle.
+
+                Example:
+>
+                    call s:conceal.operator('Divides', '/', '÷')
+<
+
+ vim:tw=78:et:ts=4:sw=4:ft=help:norl:
