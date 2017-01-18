@@ -61,15 +61,15 @@ All options are documented in more detail at `:help width-preserving-conceal-opt
   particular combination of editor (Vim, Vim graphical, Neovim, etc.), OS, and font you may or may not like the results.
   As a hint, you can try substituting things like these in `syntax/haskell/width-preserving-conceal.vim`:
 
-```vimL
-call s:haskell_conceal.operator('RArrow', '->', '→')
-```
+  ```vimL
+  call s:haskell_conceal.operator('RArrow', '->', '→')
+  ```
 
-by this:
+  by this:
 
-```vimL
-call s:haskell_conceal.operator('RArrow', '->', '⟶')
-```
+  ```vimL
+  call s:haskell_conceal.operator('RArrow', '->', '⟶')
+  ```
 
 * The Haskell presets are bare-bones and conservative (see above).
 
