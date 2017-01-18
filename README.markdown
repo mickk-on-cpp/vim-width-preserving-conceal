@@ -11,11 +11,11 @@ syntax match /->/ conceal cchar=→
 ```
 
 The intent here is to replace ASCII-art arrows as they appear e.g. in Haskell declarations by Unicode arrows. What might
-not be intended is the resulting shift in the lines depending on the `conceallevel`:
+not be intended is the resulting shift in the lines depending on the `'conceallevel'`:
 
 ![naive conceal](naive_conceal.gif)
 
-This can be especially problematic when e.g. a programmer would like to code with the `concealcursor` option set to
+This can be especially problematic when e.g. a programmer would like to code with the `'concealcursor'` option set to
 `""`: the lines and characters will dance as he or she works on and navigates the source code. This plugin aims to
 remedy that situation by making it easier to define *width-preserving substitutions*, i.e. substituting a syntax element
 by an alternative with the same width:
